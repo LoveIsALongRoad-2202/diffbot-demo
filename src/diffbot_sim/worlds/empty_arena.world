@@ -1,0 +1,52 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="diffbot_arena">
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <!-- a couple of simple boxes so you can see motion/heading clearly -->
+    <model name="box1">
+      <static>true</static>
+      <pose>1.5 0.5 0.15 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.3 0.3 0.3</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.3 0.3 0.3</size></box></geometry>
+          <material>
+            <ambient>0.8 0.2 0.2 1</ambient>
+            <diffuse>0.8 0.2 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="box2">
+      <static>true</static>
+      <pose>-1.2 -1.0 0.15 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.3 0.3 0.3</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.3 0.3 0.3</size></box></geometry>
+          <material>
+            <ambient>0.2 0.2 0.8 1</ambient>
+            <diffuse>0.2 0.2 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>
