@@ -1,0 +1,24 @@
+-- Install configuration: ""
+-- Execute custom install script
+-- Up-to-date symlink: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/urdf/diffbot.urdf.xacro
+-- Up-to-date symlink: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/launch/gazebo_sim.launch.py
+-- Up-to-date symlink: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/launch/teleop.launch.py
+-- Up-to-date symlink: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/worlds/empty_arena.world
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/config/.gitkeep
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/rviz/.gitkeep
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/meshes/.gitkeep
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/ament_index/resource_index/package_run_dependencies/diffbot_sim
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/ament_index/resource_index/parent_prefix_path/diffbot_sim
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/environment/ament_prefix_path.sh
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/environment/ament_prefix_path.dsv
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/environment/path.sh
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/environment/path.dsv
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/local_setup.bash
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/local_setup.sh
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/local_setup.zsh
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/local_setup.dsv
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/package.dsv
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/ament_index/resource_index/packages/diffbot_sim
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/cmake/diffbot_simConfig.cmake
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/cmake/diffbot_simConfig-version.cmake
+-- Symlinking: /home/ubuntu/diffbot_ws/install/diffbot_sim/share/diffbot_sim/package.xml

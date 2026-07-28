@@ -1,0 +1,1 @@
+robot_state_publisher;joint_state_publisher;joint_state_publisher_gui;xacro;gazebo_ros;gazebo_ros_pkgs;gazebo_plugins;teleop_twist_keyboard;rviz2;rclpy;geometry_msgs;nav_msgs;tf2_ros
