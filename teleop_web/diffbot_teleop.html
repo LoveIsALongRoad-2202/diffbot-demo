@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DiffBot Teleop — Hold to Move</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/roslibjs/1.3.0/roslib.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --accent: #4f8cff;
+    --accent-active: #7cb0ff;
+    --text: #e8e9ec;
+    --muted: #8a8f98;
+    --danger: #ff5c5c;
+    --ok: #3ecf8e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 28px;
+    background: var(--panel);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+  .dot.connected { background: var(--ok); }
+
+  .connect-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .connect-row input {
+    background: var(--panel);
+    border: 1px solid #2a2e38;
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    width: 220px;
+  }
+  .connect-row button {
+    background: var(--accent);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .connect-row button:hover { background: var(--accent-active); }
+
+  .pad {
+    display: grid;
+    grid-template-columns: repeat(3, 76px);
+    grid-template-rows: repeat(3, 76px);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .key {
+    background: var(--panel);
+    border: 1px solid #2a2e38;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    user-select: none;
+    cursor: pointer;
+    transition: background 0.08s, transform 0.05s;
+  }
+  .key .label { font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+  .key.active {
+    background: var(--accent);
+    transform: scale(0.96);
+  }
+  .key.stop.active { background: var(--danger); }
+  .key.empty { visibility: hidden; }
+
+  .info {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 13px;
+    color: var(--muted);
+    max-width: 420px;
+    line-height: 1.6;
+  }
+  .info b { color: var(--text); }
+
+  .live-vel {
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    background: var(--panel);
+    padding: 10px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: var(--accent-active);
+  }
+</style>
+</head>
+<body>
+
+  <h1>DiffBot Teleop</h1>
+  <div class="subtitle">Hold a key or button — release to stop instantly</div>
+
+  <div class="status-row">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">Disconnected</span>
+  </div>
+
+  <div class="connect-row">
+    <input id="wsUrl" type="text" value="ws://localhost:9090" />
+    <button onclick="connect()">Connect</button>
+  </div>
+
+  <div class="live-vel" id="liveVel">linear.x: 0.00  |  angular.z: 0.00</div>
+
+  <div class="pad">
+    <div class="key empty"></div>
+    <div class="key" data-key="i" id="key-i">▲<span class="label">forward (i)</span></div>
+    <div class="key empty"></div>
+
+    <div class="key" data-key="j" id="key-j">◀<span class="label">left (j)</span></div>
+    <div class="key stop" data-key="k" id="key-k">■<span class="label">stop (k)</span></div>
+    <div class="key" data-key="l" id="key-l">▶<span class="label">right (l)</span></div>
+
+    <div class="key empty"></div>
+    <div class="key" data-key="," id="key-,">▼<span class="label">back (,)</span></div>
+    <div class="key empty"></div>
+  </div>
+
+  <div class="info">
+    <b>How this works:</b> unlike terminal teleop, this page uses real
+    browser <b>keydown/keyup</b> events. Holding <b>i</b> publishes
+    forward velocity at 10Hz continuously; the instant you release the
+    key (or your mouse button on a tile), a zero-velocity command is
+    sent immediately. Both the Gazebo simulation and the real Arduino
+    car (via <code>serial_bridge_node</code>) subscribe to the same
+    <code>/cmd_vel</code> topic, so both respond identically and stop
+    the moment you let go.
+  </div>
+
+<script>
+let ros = null;
+let cmdVelTopic = null;
+let publishTimer = null;
+let currentLinear = 0.0;
+let currentAngular = 0.0;
+
+const LINEAR_SPEED = 1.2;   // m/s while a forward/back key is held
+const ANGULAR_SPEED = 3.0;  // rad/s while a turn key is held
+const PUBLISH_HZ = 10;      // matches repeat_rate used in terminal teleop before
+
+const activeKeys = new Set();
+
+function setStatus(connected) {
+  document.getElementById('statusDot').classList.toggle('connected', connected);
+  document.getElementById('statusText').textContent = connected ? 'Connected to rosbridge' : 'Disconnected';
+}
+
+function connect() {
+  const url = document.getElementById('wsUrl').value;
+  if (ros) { ros.close(); }
+
+  ros = new ROSLIB.Ros({ url });
+
+  ros.on('connection', () => setStatus(true));
+  ros.on('error', () => setStatus(false));
+  ros.on('close', () => setStatus(false));
+
+  cmdVelTopic = new ROSLIB.Topic({
+    ros: ros,
+    name: '/cmd_vel',
+    messageType: 'geometry_msgs/msg/Twist'
+  });
+
+  if (!publishTimer) {
+    publishTimer = setInterval(publishCurrentVelocity, 1000 / PUBLISH_HZ);
+  }
+}
+
+function computeVelocityFromKeys() {
+  let lin = 0.0, ang = 0.0;
+  if (activeKeys.has('i')) lin += LINEAR_SPEED;
+  if (activeKeys.has(',')) lin -= LINEAR_SPEED;
+  if (activeKeys.has('j')) ang += ANGULAR_SPEED;
+  if (activeKeys.has('l')) ang -= ANGULAR_SPEED;
+  if (activeKeys.has('k')) { lin = 0; ang = 0; activeKeys.clear(); }
+  return [lin, ang];
+}
+
+function publishCurrentVelocity() {
+  const [lin, ang] = computeVelocityFromKeys();
+  currentLinear = lin;
+  currentAngular = ang;
+  document.getElementById('liveVel').textContent =
+    `linear.x: ${lin.toFixed(2)}  |  angular.z: ${ang.toFixed(2)}`;
+
+  if (cmdVelTopic) {
+    const twist = new ROSLIB.Message({
+      linear: { x: lin, y: 0.0, z: 0.0 },
+      angular: { x: 0.0, y: 0.0, z: ang }
+    });
+    cmdVelTopic.publish(twist);
+  }
+}
+
+function publishStopImmediately() {
+  currentLinear = 0.0;
+  currentAngular = 0.0;
+  document.getElementById('liveVel').textContent = `linear.x: 0.00  |  angular.z: 0.00`;
+  if (cmdVelTopic) {
+    const twist = new ROSLIB.Message({
+      linear: { x: 0.0, y: 0.0, z: 0.0 },
+      angular: { x: 0.0, y: 0.0, z: 0.0 }
+    });
+    cmdVelTopic.publish(twist);
+  }
+}
+
+function setKeyVisual(key, active) {
+  const el = document.getElementById('key-' + key);
+  if (el) el.classList.toggle('active', active);
+}
+
+// ---- keyboard events (real keydown/keyup, unlike terminal teleop) ----
+const VALID_KEYS = ['i', 'j', 'k', 'l', ','];
+
+window.addEventListener('keydown', (e) => {
+  const k = e.key;
+  if (!VALID_KEYS.includes(k)) return;
+  if (!activeKeys.has(k)) {
+    activeKeys.add(k);
+    setKeyVisual(k, true);
+    publishCurrentVelocity(); // immediate response, don't wait for next tick
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  const k = e.key;
+  if (!VALID_KEYS.includes(k)) return;
+  activeKeys.delete(k);
+  setKeyVisual(k, false);
+  if (activeKeys.size === 0) {
+    publishStopImmediately(); // instant stop, no waiting on repeat timer
+  } else {
+    publishCurrentVelocity(); // recompute from remaining held keys
+  }
+});
+
+// ---- mouse/touch support on the on-screen pad (for laptops without full keyboard focus, or touch devices) ----
+document.querySelectorAll('.key[data-key]').forEach(el => {
+  const k = el.getAttribute('data-key');
+
+  const press = (ev) => {
+    ev.preventDefault();
+    if (!activeKeys.has(k)) {
+      activeKeys.add(k);
+      setKeyVisual(k, true);
+      publishCurrentVelocity();
+    }
+  };
+  const release = (ev) => {
+    ev.preventDefault();
+    activeKeys.delete(k);
+    setKeyVisual(k, false);
+    if (activeKeys.size === 0) {
+      publishStopImmediately();
+    } else {
+      publishCurrentVelocity();
+    }
+  };
+
+  el.addEventListener('mousedown', press);
+  el.addEventListener('mouseup', release);
+  el.addEventListener('mouseleave', (ev) => { if (activeKeys.has(k)) release(ev); });
+  el.addEventListener('touchstart', press);
+  el.addEventListener('touchend', release);
+});
+
+// safety: if the browser tab loses focus while a key is held (alt-tab etc),
+// release everything so the robot doesn't keep driving unattended
+window.addEventListener('blur', () => {
+  if (activeKeys.size > 0) {
+    activeKeys.clear();
+    document.querySelectorAll('.key.active').forEach(el => el.classList.remove('active'));
+    publishStopImmediately();
+  }
+});
+
+// auto-connect on load using the default URL
+window.addEventListener('load', connect);
+</script>
+</body>
+</html>

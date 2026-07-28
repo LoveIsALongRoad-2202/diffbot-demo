@@ -109,8 +109,8 @@
       <wheel_separation>${2*wheel_ygap}</wheel_separation>
       <wheel_diameter>${2*wheel_radius}</wheel_diameter>
 
-      <max_wheel_torque>10</max_wheel_torque>
-      <max_wheel_acceleration>5.0</max_wheel_acceleration>
+      <max_wheel_torque>20</max_wheel_torque>
+      <max_wheel_acceleration>20.0</max_wheel_acceleration>
 
       <command_topic>cmd_vel</command_topic>
 
